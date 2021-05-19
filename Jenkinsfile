@@ -8,7 +8,7 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-        git url:'https://github.com/google/tsunami-security-scanner.git', branch:'master'
+        git([url: 'https://github.com/google/tsunami-security-scanner.git', branch: 'master'])
       }
     }
     

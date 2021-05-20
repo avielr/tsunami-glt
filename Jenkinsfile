@@ -31,19 +31,19 @@ pipeline {
       }
     }
     
-    stage('debug') {
-        steps{
-            script{
-                iShell()
-            }
-        }
-    }
+    // stage('debug') {
+    //     steps{
+    //         script{
+    //             iShell()
+    //         }
+    //     }
+    // }
 
+    
     stage("Build image") {
         steps {
-            script {
-                myapp = docker.build imagename
-            }
+            // https://stackoverflow.com/questions/49299428/no-internet-connectivity-inside-docker-container-running-inside-kubernetes-with
+            sh label: '', script: 'docker build -t $imagename --network container:$(docker ps | grep $(hostname) | grep k8s_POD | cut -d" " -f1) .'
         }
     }
 

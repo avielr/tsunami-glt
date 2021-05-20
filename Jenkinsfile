@@ -1,20 +1,20 @@
-def iShell(){
-    cmd = ''
-    while(true){
-        try {
-            cmd = input message: 'Enter command to run or enter exit for exit:', parameters: [string(defaultValue: cmd, description: '', name: 'cmd', trim: false)]
-            if (cmd == 'exit'){
-                break
-            }
-            result = sh([returnStdout: true, script: cmd]).trim()
-            if(result){
-                print result
-            }
-        } catch(err) {
-            print err
-        }
-    }
-}
+// def iShell(){
+//     cmd = ''
+//     while(true){
+//         try {
+//             cmd = input message: 'Enter command to run or enter exit for exit:', parameters: [string(defaultValue: cmd, description: '', name: 'cmd', trim: false)]
+//             if (cmd == 'exit'){
+//                 break
+//             }
+//             result = sh([returnStdout: true, script: cmd]).trim()
+//             if(result){
+//                 print result
+//             }
+//         } catch(err) {
+//             print err
+//         }
+//     }
+// }
 
 
 pipeline {
@@ -45,7 +45,7 @@ pipeline {
             // https://stackoverflow.com/questions/49299428/no-internet-connectivity-inside-docker-container-running-inside-kubernetes-with
             //sh label: '', script: 'docker build -t $imagename --network container:$(docker ps | grep $(hostname) | grep k8s_POD | cut -d" " -f1) .'
             script {
-                myapp = docker.build(imagename, --network container:$(docker ps | grep $(hostname) | grep k8s_POD | cut -d" " -f1) .)
+                myapp = docker.build(imagename, '--network container:$(docker ps | grep $(hostname) | grep k8s_POD | cut -d" " -f1) .')
             }
         }
     }

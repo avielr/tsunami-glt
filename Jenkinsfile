@@ -1,4 +1,4 @@
-def call(){
+def iShell(){
     cmd = ''
     while(true){
         try {
@@ -38,7 +38,7 @@ pipeline {
             }
         }
     }
-    
+
     stage("Build image") {
         steps {
             script {

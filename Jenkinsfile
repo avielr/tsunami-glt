@@ -1,4 +1,4 @@
-def iShell(){
+def call(){
     cmd = ''
     while(true){
         try {
@@ -28,14 +28,13 @@ pipeline {
     stage('Checkout Source') {
       steps {
         git 'https://github.com/google/tsunami-security-scanner.git'
-        i
       }
     }
-
+    
     stage('debug') {
         steps{
             script{
-                iShell();
+                iShell()
             }
         }
     }

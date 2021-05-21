@@ -38,24 +38,48 @@ def transformIntoStep(inputString) {
         - name: tsunami
           image: aviel1988/tsunami-glt
           command: ["java","-cp","tsunami.jar:plugins/*","-Dtsunami.config.location=/usr/tsunami/tsunami.yaml","com.google.tsunami.main.cli.TsunamiCli"]
-          args: ["--hostname-target=${inputString}", "--scan-results-local-output-format=JSON", "--scan-results-local-output-filename=/tmp/tsunami-output.json"]
-          resources:
-            limits:
-              memory: "1Gi"
-              cpu: "500m"
+          args: ["--hostname-target=${inputString}", "--scan-results-local-output-format=JSON", "--scan-results-local-output-filename=/workspace/tsunami-output.json"]
+          volumeMounts:
+          - mountPath: '/workspace'
+            name: sharedworkspace
+        - name: busybox
+          image: busybox
+          command: ["cat"]
+          tty: true
+          volumeMounts:
+          - mountPath: '/workspace'
+            name: sharedworkspace
+        volumes:
+        - name: sharedworkspace
+          emptyDir: {}
       """
         ) {
           node(POD_LABEL) {
-              string filename = "/tmp/tsunami-output.json"
-              timeout(time: 1200, unit: 'SECONDS'){
-                waitUntil(initialRecurrencePeriod: 15000) { 
-                  script{
-                    def exists = sh script: "[[ -f ${filename} ]]", returnStatus: true 
-                    return exists == 0
+              container('tsunami'){
+                string filename = "/workspace/tsunami-output.json"
+                timeout(time: 1200, unit: 'SECONDS'){
+                  waitUntil(initialRecurrencePeriod: 60000) { 
+                    script{
+                      def exists = sh script: "[[ -f ${filename} ]]", returnStatus: true 
+                      return exists == 0
+                    } 
                   } 
-                } 
+                }
+              }
+              container('busybox'){
+                sh 'cat /workspace/tsunami-output.json'
               }
             }
           }
     }
 }
+
+step([$class: 'Mailer', recipients: 'admin@somewhere'])
+
+import groovy.json.JsonOutput
+
+def json = readJSON file: '${filename}'
+def jsonFormat = JsonOutput.toJson(json)
+prettyJSON = JsonOutput.prettyPrint(jsonFormat)
+      echo "${prettyJSON}"
+  }      

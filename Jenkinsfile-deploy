@@ -16,7 +16,7 @@
 //     }
 // }
 
-def serversToScan = ['www.ynet.co.il', '212.29.241.223'] // list of servers
+def serversToScan = ['www.ynet.co.il'] // list of servers
 
 def stepsForParallel = serversToScan.collectEntries {
     ["echoing ${it}" : transformIntoStep(it)]
@@ -37,13 +37,25 @@ def transformIntoStep(inputString) {
         containers:
         - name: tsunami
           image: aviel1988/tsunami-glt
-          command:
-          - --hostname-target=${inputString} --scan-results-local-output-format=JSON --scan-results-local-output-filename=/tmp/${inputString}-tsunami-result.json
+          command: ["java","-cp","tsunami.jar:plugins/*","-Dtsunami.config.location=/usr/tsunami/tsunami.yaml","com.google.tsunami.main.cli.TsunamiCli"]
+          args: ["--hostname-target=${inputString}", "--scan-results-local-output-format=JSON", "--scan-results-local-output-filename=/tmp/tsunami-output.json"]
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
       """
         ) {
-        node(POD_LABEL) {
-            echo inputString
-        }
-      }
+          node(POD_LABEL) {
+              string filename = "/tmp/tsunami-output.json"
+              timeout(time: 1200, unit: 'SECONDS'){
+                waitUntil(initialRecurrencePeriod: 15000) { 
+                  script{
+                    def exists = sh script: "[[ -f ${filename} ]]", returnStatus: true 
+                    return exists == 0
+                  } 
+                } 
+              }
+            }
+          }
     }
 }

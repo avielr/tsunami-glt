@@ -1,85 +1,81 @@
-// def iShell(){
-//     cmd = ''
-//     while(true){
-//         try {
-//             cmd = input message: 'Enter command to run or enter exit for exit:', parameters: [string(defaultValue: cmd, description: '', name: 'cmd', trim: false)]
-//             if (cmd == 'exit'){
-//                 break
-//             }
-//             result = sh([returnStdout: true, script: cmd]).trim()
-//             if(result){
-//                 print result
-//             }
-//         } catch(err) {
-//             print err
-//         }
-//     }
-// }
-
-def serversToScan = ['www.ynet.co.il'] // list of servers
+// https://www.checkmarx.com/blog/15-vulnerable-sites-to-legally-practice-your-hacking-skills/
+def serversToScan = ['www.itsecgames.com','www.damnvulnerableiosapp.com','www.try2hack.nl'] // list of servers
 
 def stepsForParallel = serversToScan.collectEntries {
     ["echoing ${it}" : transformIntoStep(it)]
 }
+properties([
+  buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '50')),
+  parameters([
+    string(
+      defaultValue: '\'www.itsecgames.com\',\'www.damnvulnerableiosapp.com\',\'www.try2hack.nl\'', 
+      description: '''Enter URL / IP to scan in the following format\'\',\'\',\'\'''', 
+      name: 'serversToScan', 
+      trim: true), 
+    string(
+      defaultValue: 'ronen.f@gloat.com', 
+      description: '', 
+      name: 'E-Mail address', 
+      trim: true)]),
+    [$class: 'JobLocalConfiguration', changeReasonComment: ''], pipelineTriggers([upstream('1.Build-glt-tsunami')])
+])
 
 parallel stepsForParallel
 
 def transformIntoStep(inputString) {
-    // We need to wrap what we return in a Groovy closure, or else it's invoked
-    // when this method is called, not when we pass it to parallel.
-    // To do this, you need to wrap the code below in { }, and either return
-    // that explicitly, or use { -> } syntax.
-    return {
-      podTemplate(yaml: """
-      apiVersion: v1
-      kind: Pod
-      spec:
-        containers:
-        - name: tsunami
-          image: aviel1988/tsunami-glt
-          command: ["java","-cp","tsunami.jar:plugins/*","-Dtsunami.config.location=/usr/tsunami/tsunami.yaml","com.google.tsunami.main.cli.TsunamiCli"]
-          args: ["--hostname-target=${inputString}", "--scan-results-local-output-format=JSON", "--scan-results-local-output-filename=/workspace/tsunami-output.json"]
-          volumeMounts:
-          - mountPath: '/workspace'
-            name: sharedworkspace
-        - name: busybox
-          image: busybox
-          command: ["cat"]
-          tty: true
-          volumeMounts:
-          - mountPath: '/workspace'
-            name: sharedworkspace
-        volumes:
-        - name: sharedworkspace
-          emptyDir: {}
-      """
-        ) {
-          node(POD_LABEL) {
-              container('tsunami'){
-                string filename = "/workspace/tsunami-output.json"
-                timeout(time: 1200, unit: 'SECONDS'){
-                  waitUntil(initialRecurrencePeriod: 60000) { 
-                    script{
-                      def exists = sh script: "[[ -f ${filename} ]]", returnStatus: true 
-                      return exists == 0
-                    } 
-                  } 
-                }
-              }
-              container('busybox'){
-                sh 'cat /workspace/tsunami-output.json'
-              }
+  return {
+    podTemplate(yaml: """
+    apiVersion: v1
+    kind: Pod
+    spec:
+      containers:
+      - name: tsunami
+        image: aviel1988/tsunami-glt
+        command:
+        - cat
+        tty: true
+        volumeMounts:
+        - mountPath: '/workspace'
+          name: sharedworkspace
+      - name: busybox
+        image: busybox
+        command: ["cat"]
+        tty: true
+        volumeMounts:
+        - mountPath: '/workspace'
+          name: sharedworkspace
+      volumes:
+      - name: sharedworkspace
+        emptyDir: {}
+    """
+    ){
+      node(POD_LABEL) {
+        stage("Scan"){
+          container('tsunami'){
+            string filename = "/workspace/tsunami-output.json"
+            timeout(time: 2700, unit: 'SECONDS'){ // Full Tsunami scan took 36.82 min.
+              sh sh "cd /usr/tsunami; java -cp \"tsunami.jar:plugins/nmap_port_scanner-0.0.1-SNAPSHOT.jar\" -Dtsunami.config.location=/usr/tsunami/tsunami.yaml com.google.tsunami.main.cli.TsunamiCli --hostname-target=${inputString} --scan-results-local-output-format=JSON --scan-results-local-output-filename=/workspace/tsunami-output.json"
             }
           }
+        }
+        stage("Report"){
+          container('busybox'){
+            sh 'cat /workspace/tsunami-output.json'
+          }
+        }
+      }
     }
+  }
 }
 
-step([$class: 'Mailer', recipients: 'admin@somewhere'])
+// step([$class: 'Mailer', recipients: 'admin@somewhere'])
 
-import groovy.json.JsonOutput
+// import groovy.json.JsonOutput
 
-def json = readJSON file: '${filename}'
-def jsonFormat = JsonOutput.toJson(json)
-prettyJSON = JsonOutput.prettyPrint(jsonFormat)
-      echo "${prettyJSON}"
-  }      
+// def json = readJSON file: '${filename}'
+// def jsonFormat = JsonOutput.toJson(json)
+// prettyJSON = JsonOutput.prettyPrint(jsonFormat)
+//       echo "${prettyJSON}"
+//   }      
+
+

@@ -3,7 +3,7 @@ buildDiscarder(
     logRotator(numToKeepStr: '50')),
     parameters([
     string(
-        defaultValue: '\'192.168.1.2\',\'192.168.1.1\',\'192.168.1.3\'', 
+        defaultValue: '\'192.168.1.2\',\'www.itsecgames.com\',\'192.168.1.3\'', 
         description: '''Enter URL / IP to scan in the following format \'\',\'\',\'\'''', 
         name: 'serversToScan', trim: true
     ), 
@@ -15,31 +15,17 @@ buildDiscarder(
     )
     ]), 
     pipelineTriggers([
-    upstream('1.Build-glt-tsunami')
+    upstream('1.Build-tsunami')
     ])
 ])
 
 
-public static boolean checkIP(String str)
-{
-    println 'Inside checkIP'
-    try
-    {
-         String[] parts = str.split("\\.");
-         if (parts.length != 4) return false;
-         for (int i = 0; i < 4; ++i)
-         {
-             int p = Integer.parseInt(parts[i]);
-             if (p > 255 || p < 0) return false;
-         }
-         println 'valid IP'
-         return true;
-    } catch (Exception e)
-    {
-        println 'invalid IP'
-        return false;
-    }
+
+def stepsForParallel = serversToScan.split(',')collectEntries {
+ ["${it}" : transformIntoStep(it)]
 }
+
+parallel stepsForParallel
 
 def transformIntoStep(inputString) {
   return {
@@ -50,6 +36,7 @@ def transformIntoStep(inputString) {
       containers:
       - name: tsunami
         image: aviel1988/tsunami-glt
+        imagePullPolicy: IfNotPresent
         command:
         - cat
         tty: true
@@ -58,6 +45,7 @@ def transformIntoStep(inputString) {
           name: sharedworkspace
       - name: busybox
         image: busybox
+        imagePullPolicy: IfNotPresent
         command: ["cat"]
         tty: true
         volumeMounts:
@@ -68,26 +56,25 @@ def transformIntoStep(inputString) {
         emptyDir: {}
     """
     ){
+      env.inputString = inputString
       node(POD_LABEL) {
         stage("Scan"){
-            println 'Hereeeeee'
-            boolean isIP = checkIP(inputString)
-            println isIP
-            if(isIP){
-                println 'inside isIP'
-                String tsunamiCLI = '--ip-v4-target'
+            if(inputString.matches(".*[a-z].*")){
+                echo "inputString is a url ${inputString}"
+                env.tsunamiCLI = sh(returnStdout: true, script: 'echo --hostname-target=')
             } else {
-                String tsunamiCLI = '--hostname-target'
-                println 'inside isIP'
+                echo "inputString is an IP ${inputString}" 
+                env.tsunamiCLI = sh(returnStdout: true, script: 'echo --ip-v4-target=')
             }
-            println "tsunamiCLI=${tsunamiCLI}"
-            println "inputString=${inputString}"
             container('tsunami'){
+                env.testString = sh(returnStdout: true, script: 'echo "${inputString}"')
+                env.testString = env.testString.replace("'", "").trim()
+                env.testTsunamiCLI = sh(returnStdout: true, script: 'echo "${tsunamiCLI}"').trim()
                 string filename = "/workspace/tsunami-output.json"
                 timeout(time: 2700, unit: 'SECONDS'){ // Full Tsunami scan took 36.82 min.
-                println "tsunamiCLI=${tsunamiCLI}"
-                println "inputString=${inputString}"
-                sh "cd /usr/tsunami; java -cp \"tsunami.jar:plugins/nmap_port_scanner-0.0.1-SNAPSHOT.jar\" -Dtsunami.config.location=/usr/tsunami/tsunami.yaml com.google.tsunami.main.cli.TsunamiCli --hostname-target=${inputString} --scan-results-local-output-format=JSON --scan-results-local-output-filename=/workspace/tsunami-output.json"
+                //RUN_CMD = testTsunamiCLI.trim() + testString.trim()
+                echo "RUN_CMD=${RUN_CMD}"
+                sh "cd /usr/tsunami; java -cp \"tsunami.jar:plugins/nmap_port_scanner-0.0.1-SNAPSHOT.jar\" -Dtsunami.config.location=/usr/tsunami/tsunami.yaml com.google.tsunami.main.cli.TsunamiCli ${RUN_CMD} --scan-results-local-output-format=JSON --scan-results-local-output-filename=/workspace/tsunami-output.json"
                 }
             }
         }
@@ -100,19 +87,4 @@ def transformIntoStep(inputString) {
       }
     }
   }
-}
-
-node {  
-    stage('Setup parameters'){
-
-    }
-    stage('Parallel') { 
-        def stepsForParallel = serversToScan.split(',')collectEntries {
-            ["${it}" : transformIntoStep(it)]
-        }
-        parallel stepsForParallel
-    }
-    stage('Deploy') { 
-        // 
-    }
 }

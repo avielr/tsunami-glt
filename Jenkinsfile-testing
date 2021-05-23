@@ -59,22 +59,10 @@ def transformIntoStep(inputString) {
       node(POD_LABEL) {
         stage("Scan"){
             env.inputString = inputString
-            if(inputString.matches(".*[a-z].*")){
-                echo "inputString is a url ${inputString}"
-                env.tsunamiCLI = sh(returnStdout: true, script: 'echo --hostname-target=')
-            } else {
-                echo "inputString is an IP ${inputString}" 
-                env.tsunamiCLI = sh(returnStdout: true, script: 'echo --ip-v4-target=')
-            }
             container('tsunami'){
-                env.testString = sh(returnStdout: true, script: 'echo "${inputString}"')
-                env.testString = env.testString.replace("'", "")
-                env.testTsunamiCLI = sh(returnStdout: true, script: 'echo "${tsunamiCLI}"')
                 string filename = "/workspace/tsunami-output.json"
                 timeout(time: 2700, unit: 'SECONDS'){ // Full Tsunami scan took 36.82 min.
-                RUN_CMD = testTsunamiCLI.trim() + testString.trim()
-                //echo "RUN_CMD=${RUN_CMD}"
-                sh "cd /usr/tsunami; java -cp \"tsunami.jar:plugins/nmap_port_scanner-0.0.1-SNAPSHOT.jar\" -Dtsunami.config.location=/usr/tsunami/tsunami.yaml com.google.tsunami.main.cli.TsunamiCli ${RUN_CMD} --scan-results-local-output-format=JSON --scan-results-local-output-filename=/workspace/tsunami-output.json"
+                sh "cd /usr/tsunami; java -cp \"tsunami.jar:plugins/nmap_port_scanner-0.0.1-SNAPSHOT.jar\" -Dtsunami.config.location=/usr/tsunami/tsunami.yaml com.google.tsunami.main.cli.TsunamiCli --ip-v4-target=${inputString} --scan-results-local-output-format=JSON --scan-results-local-output-filename=/workspace/tsunami-output.json"
                 }
             }
         }

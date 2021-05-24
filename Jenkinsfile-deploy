@@ -49,8 +49,8 @@ def transformIntoStep(inputString) {
         volumeMounts:
         - mountPath: '/workspace'
           name: sharedworkspace
-      - name: busybox
-        image: busybox
+      - name: aws-cli
+        image: amazon/aws-cli
         imagePullPolicy: IfNotPresent
         command: ["cat"]
         tty: true
@@ -74,11 +74,16 @@ def transformIntoStep(inputString) {
         }
 
         stage("Report"){
-          container('busybox'){
-            sh 'cat /workspace/tsunami-output.json'
+          env.S3_BUCKET = params.S3_BUCKET
+          container('aws-cli'){
+            env.FILE_IP = env.inputString.replace(".","-").replace("'","")
+            //echo "FILE_IP = ${FILE_IP}"
             withAWS(credentials: 'AWS_CREDS', region: 'eu-west-2') {
-                s3Upload acl: 'Private', bucket: ${params.S3_BUCKET} , file: '/workspace/tsunami-output.json'
+                //sh 'env'
+                //echo "FILE_IP INSIDE withAWS = ${FILE_IP}"
+                sh 'aws s3 cp --acl public-read /workspace/tsunami-output.json s3://${S3_BUCKET}/${BUILD_ID}_${FILE_IP}_tsunami_output.json'
             }
+            echo "URL: https://${S3_BUCKET}.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json"
           }
         }
       }

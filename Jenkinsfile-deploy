@@ -15,12 +15,13 @@ buildDiscarder(
     )
     ]), 
     pipelineTriggers([
-    upstream('Build_glt_tsunami')
+    upstream('1_Build_glt_tsunami')
     ])
 ])
 
-
-
+if (!binding.hasVariable('serversToScan')) {
+  serversToScan = []
+}
 def stepsForParallel = serversToScan.split(',')collectEntries {
  ["${it}" : transformIntoStep(it)]
 }

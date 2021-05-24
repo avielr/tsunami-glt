@@ -19,12 +19,8 @@ properties([
     ])
 ])
 
-// set default value to serversToScan variable to avoid first run failure
-if (!binding.hasVariable('serversToScan')) {
-  serversToScan = "192.168.1.2"
-}
 
-def stepsForParallel = serversToScan.split(',')collectEntries {
+def stepsForParallel = params.serversToScan.split(',')collectEntries {
  ["${it}" : transformIntoStep(it)]
 }
 

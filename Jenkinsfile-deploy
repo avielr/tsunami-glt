@@ -1,15 +1,31 @@
-// https://www.checkmarx.com/blog/15-vulnerable-sites-to-legally-practice-your-hacking-skills/
-def serversToScan = ['www.itsecgames.com','www.damnvulnerableiosapp.com','www.try2hack.nl'] // list of servers
+properties([
+buildDiscarder(
+    logRotator(numToKeepStr: '50')),
+    parameters([
+    string(
+        defaultValue: '\'192.168.1.2\',\'10.0.0.50\',\'192.168.1.3\',\'172.31.1.1\'', 
+        description: '''Enter URL / IP to scan in the following format \'\',\'\',\'\'''', 
+        name: 'serversToScan', trim: true
+    ), 
+    string(
+        defaultValue: 'test@test.com', 
+        description: '', 
+        name: 'E-Mail address', 
+        trim: true
+    )
+    ]), 
+    pipelineTriggers([
+    upstream('1.Build-tsunami')
+    ])
+])
 
-def stepsForParallel = serversToScan.collectEntries {
-    ["${it}" : transformIntoStep(it)]
+
+
+def stepsForParallel = serversToScan.split(',')collectEntries {
+ ["${it}" : transformIntoStep(it)]
 }
 
 parallel stepsForParallel
-
-def checkIP(){
-
-}
 
 def transformIntoStep(inputString) {
   return {
@@ -20,6 +36,7 @@ def transformIntoStep(inputString) {
       containers:
       - name: tsunami
         image: aviel1988/tsunami-glt
+        imagePullPolicy: IfNotPresent
         command:
         - cat
         tty: true
@@ -28,6 +45,7 @@ def transformIntoStep(inputString) {
           name: sharedworkspace
       - name: busybox
         image: busybox
+        imagePullPolicy: IfNotPresent
         command: ["cat"]
         tty: true
         volumeMounts:
@@ -39,37 +57,14 @@ def transformIntoStep(inputString) {
     """
     ){
       node(POD_LABEL) {
-        stage('Setup parameters'){
-          properties([
-            buildDiscarder(
-              logRotator(numToKeepStr: '50')),
-              parameters([
-                string(
-                  defaultValue: '\'www.itsecgames.com\',\'www.damnvulnerableiosapp.com\',\'www.try2hack.nl\'', 
-                  description: '''Enter URL / IP to scan in the following format \'\',\'\',\'\'''', 
-                  name: 'serversToScan', trim: true
-                ), 
-                string(
-                  defaultValue: 'test@test.com', 
-                  description: '', 
-                  name: 'E-Mail address', 
-                  trim: true
-                )
-              ]), 
-              pipelineTriggers([
-                upstream('1.Build-glt-tsunami')
-              ])
-          ])
-        }
-        
         stage("Scan"){
-
-          container('tsunami'){
-            string filename = "/workspace/tsunami-output.json"
-            timeout(time: 2700, unit: 'SECONDS'){ // Full Tsunami scan took 36.82 min.
-              sh "cd /usr/tsunami; java -cp \"tsunami.jar:plugins/nmap_port_scanner-0.0.1-SNAPSHOT.jar\" -Dtsunami.config.location=/usr/tsunami/tsunami.yaml com.google.tsunami.main.cli.TsunamiCli --hostname-target=${inputString} --scan-results-local-output-format=JSON --scan-results-local-output-filename=/workspace/tsunami-output.json"
+            env.inputString = inputString
+            container('tsunami'){
+                string filename = "/workspace/tsunami-output.json"
+                timeout(time: 2700, unit: 'SECONDS'){ // Full Tsunami scan took 36.82 min.
+                sh "cd /usr/tsunami; java -cp \"tsunami.jar:plugins/nmap_port_scanner-0.0.1-SNAPSHOT.jar\" -Dtsunami.config.location=/usr/tsunami/tsunami.yaml com.google.tsunami.main.cli.TsunamiCli --ip-v4-target=${inputString} --scan-results-local-output-format=JSON --scan-results-local-output-filename=/workspace/tsunami-output.json"
+                }
             }
-          }
         }
 
         stage("Report"){
@@ -81,14 +76,3 @@ def transformIntoStep(inputString) {
     }
   }
 }
-
-// step([$class: 'Mailer', recipients: 'admin@somewhere'])
-
-// import groovy.json.JsonOutput
-
-// def json = readJSON file: '${filename}'
-// def jsonFormat = JsonOutput.toJson(json)
-// prettyJSON = JsonOutput.prettyPrint(jsonFormat)
-//       echo "${prettyJSON}"
-//   }      
-

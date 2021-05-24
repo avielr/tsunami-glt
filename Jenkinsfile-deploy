@@ -15,7 +15,7 @@ buildDiscarder(
     )
     ]), 
     pipelineTriggers([
-    upstream('1.Build-tsunami')
+    upstream('Build_glt_tsunami')
     ])
 ])
 

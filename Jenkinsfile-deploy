@@ -20,7 +20,7 @@ properties([
 ])
 
 //def S3_BUCKET = params.S3_BUCKET
-def EMAIL_ADDRESS = 'aviel1988@gmail.com'
+def EMAIL_ADDRESS = 'aviel1988@gmail.com' // default value for first run not to fail.
 
 def stepsForParallel = params.serversToScan.split(',')collectEntries {
  ["${it}" : transformIntoStep(it)]
@@ -67,7 +67,6 @@ def transformIntoStep(inputString) {
                 }
             }
         }
-
         stage("Report"){
           env.EMAIL_ADDRESS = params.EMAIL_ADDRESS
           env.inputString = inputString
@@ -79,11 +78,9 @@ def transformIntoStep(inputString) {
                 }
             }
             URL_PATH = sh(returnStdout: true, script: "echo https://avl-glt-reports.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json")
-            //EMAIL_ADDRESS = sh(returnStdout: true, script: "echo ${params.EMAIL_ADDRESS}")
             withEnv(["URL_PATH=${URL_PATH}" , "EMAIL_ADDRESS=${env.EMAIL_ADDRESS}"]) {
               mail  to: "${EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
             }
-            
           }
         }
       }

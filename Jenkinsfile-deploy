@@ -1,6 +1,4 @@
 properties([
-    buildDiscarder(
-      logRotator(numToKeepStr: '50')),
     parameters([
     string(
         // https://www.checkmarx.com/blog/15-vulnerable-sites-to-legally-practice-your-hacking-skills/
@@ -16,16 +14,9 @@ properties([
         name: 'EMAIL_ADDRESS', 
         trim: true
     )
-    // ),
-    // string(
-    //     defaultValue: 'avl-glt-reports', 
-    //     description: 'S3 Bucket name', 
-    //     name: 'S3_BUCKET'
-    // )
-    ]), 
-    pipelineTriggers([
-    upstream('1_Build_glt_tsunami')
-    ])
+    ]),
+    buildDiscarder(
+      logRotator(numToKeepStr: '50'))
 ])
 
 //def S3_BUCKET = params.S3_BUCKET

@@ -20,6 +20,7 @@ properties([
 ])
 
 //def S3_BUCKET = params.S3_BUCKET
+def EMAIL_ADDRESS = 'aviel1988@gmail.com'
 
 def stepsForParallel = params.serversToScan.split(',')collectEntries {
  ["${it}" : transformIntoStep(it)]

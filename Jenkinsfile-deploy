@@ -4,7 +4,7 @@ properties([
         // https://www.checkmarx.com/blog/15-vulnerable-sites-to-legally-practice-your-hacking-skills/
         //          ['www.itsecgames.com','www.damnvulnerableiosapp.com','www.try2hack.nl']
         defaultValue: '\'184.168.131.241\',\'184.168.139.128\',\'185.17.73.13\'', 
-        description: '''Enter URL / IP to scan in the following format \'\',\'\',\'\'''', 
+        description: ' IPs to scan', 
         name: 'serversToScan', 
         trim: true
     ), 
@@ -68,7 +68,7 @@ def transformIntoStep(inputString) {
         }
 
         stage("Report"){
-          //env.S3_BUCKET = params.S3_BUCKET
+          env.EMAIL_ADDRESS = params.EMAIL_ADDRESS
           env.inputString = inputString
           container('aws-cli'){
             withAWS(credentials: 'AWS_CREDS', region: 'eu-west-2') {
@@ -79,7 +79,10 @@ def transformIntoStep(inputString) {
             }
             URL_PATH = sh(returnStdout: true, script: "echo https://avl-glt-reports.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json")
             EMAIL_ADDRESS = sh(returnStdout: true, script: "echo ${params.EMAIL_ADDRESS}")
-            mail  to: "${EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
+            withEnv(["URL_PATH=${URL_PATH}" , "EMAIL_ADDRESS=$env.EMAIL_ADDRESS"]) {
+              mail  to: "${EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
+            }
+            
           }
         }
       }

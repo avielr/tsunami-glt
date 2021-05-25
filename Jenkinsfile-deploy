@@ -85,6 +85,9 @@ def transformIntoStep(inputString) {
                 }
             }
             echo "URL: https://${S3_BUCKET}.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json"
+            URL_PATH = sh(returnStdout: true, script: "echo https://${S3_BUCKET}.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json")
+            echo "URL_PATH = ${URL_PATH}"
+            mail  to: 'aviel1988@gmail.com', body: 'Scan results - ${URL_PATH}', subject: 'Build #${BUILD_ID} - Scan results for IP ${inputString}'
           }
         }
       }

@@ -7,26 +7,28 @@ properties([
         //          ['www.itsecgames.com','www.damnvulnerableiosapp.com','www.try2hack.nl']
         defaultValue: '\'184.168.131.241\',\'184.168.139.128\',\'185.17.73.13\'', 
         description: '''Enter URL / IP to scan in the following format \'\',\'\',\'\'''', 
-        name: 'serversToScan', trim: true
+        name: 'serversToScan', 
+        trim: true
     ), 
     string(
-        defaultValue: 'test@test.com', 
-        description: '', 
-        name: 'E-Mail address', 
+        defaultValue: 'aviel1988@gmail.com , demo.avlr@gmail.com', 
+        description: 'Enter EMAIL address to send the report to', 
+        name: 'EMAIL_ADDRESS', 
         trim: true
-    ),
-    string(
-        defaultValue: 'avl-glt-reports', 
-        description: 'S3 Bucket name', 
-        name: 'S3_BUCKET'
     )
+    // ),
+    // string(
+    //     defaultValue: 'avl-glt-reports', 
+    //     description: 'S3 Bucket name', 
+    //     name: 'S3_BUCKET'
+    // )
     ]), 
     pipelineTriggers([
     upstream('1_Build_glt_tsunami')
     ])
 ])
 
-def S3_BUCKET = params.S3_BUCKET
+//def S3_BUCKET = params.S3_BUCKET
 
 def stepsForParallel = params.serversToScan.split(',')collectEntries {
  ["${it}" : transformIntoStep(it)]
@@ -88,7 +90,7 @@ def transformIntoStep(inputString) {
             echo "URL: https://avl-glt-reports.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json"
             URL_PATH = sh(returnStdout: true, script: "echo https://avl-glt-reports.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json")
             echo "URL_PATH = ${URL_PATH}"
-            mail  to: 'aviel1988@gmail.com', body: 'Scan results - ${URL_PATH}', subject: 'Build #${BUILD_ID} - Scan results for IP ${inputString}'
+            mail  to: "${EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
           }
         }
       }

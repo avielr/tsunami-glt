@@ -73,10 +73,10 @@ def transformIntoStep(inputString) {
             withAWS(credentials: 'AWS_CREDS', region: 'eu-west-2') {
                 FILE_IP = sh(returnStdout: true, script: "echo ${inputString} |tr '.' '-'").trim()
                 withEnv(["FILE_IP=${FILE_IP}" , "S3_BUCKET=${env.S3_BUCKET}"]) {
-                    sh 'aws s3 cp --acl public-read /workspace/tsunami-output.json s3://avl-glt-reports/${BUILD_ID}_${FILE_IP}_tsunami_output.json'
+                    sh 'aws s3 cp --acl public-read /workspace/tsunami-output.json s3://avl-glt-reports2/${BUILD_ID}_${FILE_IP}_tsunami_output.json'
                 }
             }
-            URL_PATH = sh(returnStdout: true, script: "echo https://avl-glt-reports.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json")
+            URL_PATH = sh(returnStdout: true, script: "echo https://avl-glt-reports2.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json")
             withEnv(["URL_PATH=${URL_PATH}" , "EMAIL_ADDRESS=${env.EMAIL_ADDRESS}"]) {
               mail  to: "${EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
             }

@@ -29,7 +29,7 @@ parallel stepsForParallel
 
 def transformIntoStep(inputString) {
   return {
-    podTemplate(yaml: """
+    podTemplate(cloud: 'kubernetes-avl', yaml: """
     apiVersion: v1
     kind: Pod
     spec:

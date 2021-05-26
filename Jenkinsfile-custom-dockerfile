@@ -3,7 +3,11 @@ pipeline {
     imagename = "aviel1988/tsunami-glt:${env.BUILD_ID}"
     dockerImage = ''
   }
-  agent any
+  agent {
+    kubernetes {
+      cloud 'kubernetes-avl'
+    }
+  }
   stages {
     stage('Checkout Source') {
       steps {

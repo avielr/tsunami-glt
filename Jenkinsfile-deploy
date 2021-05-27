@@ -67,7 +67,7 @@ def transformIntoStep(inputString) {
             }
         }
         stage("Report"){ 
-          def env.EMAIL_ADDRESS_IN_STEP = params.EMAIL_ADDRESS
+          def EMAIL_ADDRESS_IN_STEP = params.EMAIL_ADDRESS
           env.inputString = inputString
           container('aws-cli'){
             withAWS(credentials: 'AWS_CREDS', region: 'eu-west-2') {
@@ -80,9 +80,9 @@ def transformIntoStep(inputString) {
             //withEnv(["URL_PATH=${URL_PATH}" , "EMAIL_ADDRESS=${env.EMAIL_ADDRESS}"]) {
             withEnv(["URL_PATH=${URL_PATH}"]) {
               echo "EMAIL_ADDRESS = ${params.EMAIL_ADDRESS}"
-              echo "EMAIL_ADDRESS_IN_STEP = ${env.EMAIL_ADDRESS_IN_STEP}"
+              echo "EMAIL_ADDRESS_IN_STEP = ${EMAIL_ADDRESS_IN_STEP}"
               //mail to: "${params.EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
-              mail to: "${env.EMAIL_ADDRESS_IN_STEP}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
+              mail to: "${EMAIL_ADDRESS_IN_STEP}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
             }
           }
         }

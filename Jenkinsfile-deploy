@@ -19,7 +19,7 @@ properties([
       logRotator(numToKeepStr: '50'))
 ])
 
-def EMAIL_ADDRESS2 = 'aviel1988@gmail.com' // default value for first run not to fail.
+def EMAIL_ADDRESS = 'aviel1988@gmail.com' // default value for first run not to fail.
 
 def stepsForParallel = params.serversToScan.split(',')collectEntries {
  ["${it}" : transformIntoStep(it)]
@@ -80,8 +80,9 @@ def transformIntoStep(inputString) {
             withEnv(["URL_PATH=${URL_PATH}" , "EMAIL_ADDRESS=${env.EMAIL_ADDRESS}"]) {
               echo "EMAIL_ADDRESS = ${EMAIL_ADDRESS}"
               sh 'env'
-              CON = sh(returnStdout: true, script: 'if [ -z "${EMAIL_ADDRESS}" ]; then echo "NULL"; else echo "Not NULL"; fi')
-              if (CON != 'NULL') {                                          
+              //CON = sh(returnStdout: true, script: 'if [ -z "${EMAIL_ADDRESS}" ]; then echo "NULL"; else echo "Not NULL"; fi')
+              //if (CON != 'null') {
+              if (!EMAIL_ADDRESS?.trim()){                                          
                 mail  to: "${EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
               }
             }

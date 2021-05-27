@@ -78,15 +78,8 @@ def transformIntoStep(inputString) {
             }
             URL_PATH = sh(returnStdout: true, script: "echo https://avl-glt-reports2.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json")
             withEnv(["URL_PATH=${URL_PATH}" , "EMAIL_ADDRESS=${env.EMAIL_ADDRESS}"]) {
-              echo "EMAIL_ADDRESS = ${EMAIL_ADDRESS}"
-              sh 'env'
-              //CON = sh(returnStdout: true, script: 'if [ -z "${EMAIL_ADDRESS}" ]; then echo "NULL"; else echo "Not NULL"; fi')
-              //if (CON != 'null') {
-              if (!EMAIL_ADDRESS?.trim()){
-                env.EMAIL_ADDRESS = params.EMAIL_ADDRESS
-                echo "EMAIL_ADDRESS AFTER VALIDATION = ${EMAIL_ADDRESS}"
-              }
-              mail to: "${EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
+              echo "EMAIL_ADDRESS = ${params.EMAIL_ADDRESS}"
+              mail to: "${params.EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
             }
           }
         }

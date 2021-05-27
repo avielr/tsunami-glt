@@ -67,7 +67,7 @@ def transformIntoStep(inputString) {
             }
         }
         stage("Report"){ 
-          env.EMAIL_ADDRESS = params.EMAIL_ADDRESS
+          def env.EMAIL_ADDRESS_IN_STEP = params.EMAIL_ADDRESS
           env.inputString = inputString
           container('aws-cli'){
             withAWS(credentials: 'AWS_CREDS', region: 'eu-west-2') {
@@ -77,9 +77,12 @@ def transformIntoStep(inputString) {
                 }
             }
             URL_PATH = sh(returnStdout: true, script: "echo https://avl-glt-reports2.s3.eu-west-2.amazonaws.com/${BUILD_ID}_${FILE_IP}_tsunami_output.json")
-            withEnv(["URL_PATH=${URL_PATH}" , "EMAIL_ADDRESS=${env.EMAIL_ADDRESS}"]) {
+            //withEnv(["URL_PATH=${URL_PATH}" , "EMAIL_ADDRESS=${env.EMAIL_ADDRESS}"]) {
+            withEnv(["URL_PATH=${URL_PATH}"]) {
               echo "EMAIL_ADDRESS = ${params.EMAIL_ADDRESS}"
-              mail to: "${params.EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
+              echo "EMAIL_ADDRESS_IN_STEP = ${EMAIL_ADDRESS_IN_STEP}"
+              //mail to: "${params.EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
+              mail to: "${env.EMAIL_ADDRESS_IN_STEP}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
             }
           }
         }

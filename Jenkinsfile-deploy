@@ -19,7 +19,7 @@ properties([
       logRotator(numToKeepStr: '50'))
 ])
 
-def EMAIL_ADDRESS = 'aviel1988@gmail.com' // default value for first run not to fail.
+//def EMAIL_ADDRESS = 'aviel1988@gmail.com' // default value for first run not to fail.
 
 def stepsForParallel = params.serversToScan.split(',')collectEntries {
  ["${it}" : transformIntoStep(it)]
@@ -82,7 +82,7 @@ def transformIntoStep(inputString) {
               sh 'env'
               //CON = sh(returnStdout: true, script: 'if [ -z "${EMAIL_ADDRESS}" ]; then echo "NULL"; else echo "Not NULL"; fi')
               //if (CON != 'null') {
-              if (EMAIL_ADDRESS?.trim()){
+              if (!EMAIL_ADDRESS?.trim()){
                 env.EMAIL_ADDRESS = params.EMAIL_ADDRESS
                 echo "EMAIL_ADDRESS AFTER VALIDATION = ${EMAIL_ADDRESS}"
               }

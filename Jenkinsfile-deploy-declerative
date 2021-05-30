@@ -68,11 +68,11 @@ pipeline {
     options {
         buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '50')
     }
-
-    parameters {
-        string defaultValue: '184.168.131.241 , 184.168.139.128 , 185.17.73.13', description: 'IPs to scan', name: 'serversToScan', trim: true
-        string defaultValue: 'aviel1988@gmail.com , demo.avlr@gmail.com', description: 'Enter EMAIL address to send the report to', name: 'EMAIL_ADDRESS', trim: true
-    }
+    // Moved parameters to pipelineJob due to https://issues.jenkins.io/browse/JENKINS-40574 https://issues.jenkins.io/browse/JENKINS-41929
+    // parameters {
+    //     string defaultValue: '184.168.131.241,184.168.139.128,185.17.73.13', description: 'IPs to scan', name: 'serversToScan', trim: true
+    //     string defaultValue: 'aviel1988@gmail.com, demo.avlr@gmail.com', description: 'Enter EMAIL address to send the report to', name: 'EMAIL_ADDRESS', trim: true
+    // }
     stages {
         stage('Run Parallel'){
             steps {

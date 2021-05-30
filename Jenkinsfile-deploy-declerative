@@ -1,32 +1,3 @@
-properties([
-    parameters([
-    string(
-        // https://www.checkmarx.com/blog/15-vulnerable-sites-to-legally-practice-your-hacking-skills/
-        //          ['www.itsecgames.com','www.damnvulnerableiosapp.com','www.try2hack.nl']
-        defaultValue: '\'184.168.131.241\',\'184.168.139.128\',\'185.17.73.13\'', 
-        description: ' IPs to scan', 
-        name: 'serversToScan', 
-        trim: true
-    ), 
-    string(
-        defaultValue: 'aviel1988@gmail.com , demo.avlr@gmail.com', 
-        description: 'Enter EMAIL address to send the report to', 
-        name: 'EMAIL_ADDRESS', 
-        trim: true
-    )
-    ]),
-    buildDiscarder(
-      logRotator(numToKeepStr: '50'))
-])
-
-//def EMAIL_ADDRESS = 'aviel1988@gmail.com' // default value for first run not to fail.
-
-def stepsForParallel = params.serversToScan.split(',')collectEntries {
- ["${it}" : transformIntoStep(it)]
-}
-
-parallel stepsForParallel
-
 def transformIntoStep(inputString) {
   return {
     podTemplate(cloud: 'kubernetes-avl', yaml: """
@@ -82,11 +53,36 @@ def transformIntoStep(inputString) {
               echo "EMAIL_ADDRESS = ${params.EMAIL_ADDRESS}"
               echo "EMAIL_ADDRESS_IN_STEP = ${EMAIL_ADDRESS_IN_STEP}"
               //mail to: "${params.EMAIL_ADDRESS}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
-              mail to: "${env.EMAIL_ADDRESS_IN_STEP}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
+              mail to: "${EMAIL_ADDRESS_IN_STEP}", body: "Scan results - ${URL_PATH}", subject: "Build #${BUILD_ID} - Scan results for IP ${inputString}"
             }
           }
         }
       }
     }
   }
+}
+
+
+pipeline {
+    agent any
+    options {
+        buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '50')
+    }
+    // Moved parameters to pipelineJob due to https://issues.jenkins.io/browse/JENKINS-40574 https://issues.jenkins.io/browse/JENKINS-41929
+    // parameters {
+    //     string defaultValue: '184.168.131.241,184.168.139.128,185.17.73.13', description: 'IPs to scan', name: 'serversToScan', trim: true
+    //     string defaultValue: 'aviel1988@gmail.com, demo.avlr@gmail.com', description: 'Enter EMAIL address to send the report to', name: 'EMAIL_ADDRESS', trim: true
+    // }
+    stages {
+        stage('Run Parallel'){
+            steps {
+                script {
+                    def stepsForParallel = params.serversToScan.split(',')collectEntries {
+                        ["${it}" : transformIntoStep(it)]
+                    }
+                    parallel stepsForParallel
+                }
+            }
+        }
+    }
 }
